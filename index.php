@@ -9,6 +9,7 @@
             background-color: #f4f4f4;
             margin: 40px;
         }
+
         .container {
             background-color: #ffffff;
             padding: 25px;
@@ -17,11 +18,33 @@
             margin: auto;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
         }
+
         h1, h2 {
             color: #2c3e50;
         }
+
         ul {
             margin-left: 20px;
+        }
+
+        .mockup {
+            text-align: center;
+            margin-top: 25px;
+            margin-bottom: 25px;
+        }
+
+        .mockup img {
+            max-width: 100%;
+            width: 700px;
+            border-radius: 10px;
+            border: 1px solid #ddd;
+            box-shadow: 0 0 8px rgba(0,0,0,0.15);
+        }
+
+        .mockup p {
+            font-size: 14px;
+            color: #555;
+            margin-top: 8px;
         }
     </style>
 </head>
@@ -44,6 +67,12 @@
         La aplicación permite gestionar la información de los productos de manera ordenada,
         facilitando el control del inventario y la administración del negocio.
     </p>
+
+    <h2>🖼️ Mockup de la aplicación</h2>
+    <div class="mockup">
+        <img src="mockup.jpeg" alt="Mockup de la tienda de artículos tecnológicos">
+        <p>Mockup referencial de la interfaz principal de la aplicación.</p>
+    </div>
 
     <h2>🔄 Operaciones CRUD</h2>
 
