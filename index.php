@@ -93,11 +93,7 @@ $productos = $pdo->query("SELECT * FROM productos ORDER BY id DESC")->fetchAll()
 
 <div class="container">
 
-    <h1>🛒 Tienda de Artículos Tecnológicos</h1>
-
-    <p style="background:#e8f0fe;padding:10px;border-radius:5px;">
-        Aplicación desplegada en contenedores Docker. Servicio web con base de datos SQLite.
-    </p>
+    <h1>Tienda de Artículos Tecnológicos</h1>
 
     <!-- ===== CREAR ===== -->
     <h2>Crear Producto</h2>
@@ -128,6 +124,7 @@ $productos = $pdo->query("SELECT * FROM productos ORDER BY id DESC")->fetchAll()
             <th>ID</th>
             <th>Nombre</th>
             <th>Categoría</th>
+            <th>Descripción</th>
             <th>Precio</th>
             <th>Stock</th>
             <th>Fecha</th>
@@ -139,6 +136,7 @@ $productos = $pdo->query("SELECT * FROM productos ORDER BY id DESC")->fetchAll()
             <td><?= $p['id'] ?></td>
             <td><?= htmlspecialchars($p['nombre']) ?></td>
             <td><?= htmlspecialchars($p['categoria']) ?></td>
+            <td><?= htmlspecialchars($p['descripcion']) ?></td>
             <td>$<?= number_format($p['precio'], 0, ',', '.') ?></td>
             <td><?= $p['stock'] ?></td>
             <td><?= $p['fecha_creacion'] ?></td>
