@@ -54,9 +54,9 @@ try {
         
         if ($count == 0) {
             $productosEjemplo = [
-                ['Laptop HP', 'Computadoras', 899.99, 5, 'Laptop HP Pavilion con 16GB RAM', date('Y-m-d H:i:s')],
-                ['Mouse Logitech', 'Accesorios', 29.99, 15, 'Mouse inalámbrico Logitech MX', date('Y-m-d H:i:s')],
-                ['Monitor Samsung', 'Monitores', 249.99, 3, 'Monitor 24" Samsung Full HD', date('Y-m-d H:i:s')]
+                ['Laptop HP', 'Computadoras', 899990, 5, 'Laptop HP Pavilion con 16GB RAM', date('Y-m-d H:i:s')],
+                ['Mouse Logitech', 'Accesorios', 29990, 15, 'Mouse inalámbrico Logitech MX', date('Y-m-d H:i:s')],
+                ['Monitor Samsung', 'Monitores', 249990, 3, 'Monitor 24" Samsung Full HD', date('Y-m-d H:i:s')]
             ];
             
             $insert = $pdo->prepare("INSERT INTO productos (nombre, categoria, precio, stock, descripcion, fecha_creacion) VALUES (?, ?, ?, ?, ?, ?)");
