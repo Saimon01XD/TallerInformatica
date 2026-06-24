@@ -1,33 +1,52 @@
 <?php
 require 'database.php';
 
+$mensaje = "";
+
 /* ===== CREAR PRODUCTO ===== */
 if (isset($_POST['crear'])) {
-    $stmt = $pdo->prepare("
-        INSERT INTO productos (nombre, categoria, precio, stock, descripcion)
-        VALUES (?, ?, ?, ?, ?)
-    ");
-    $stmt->execute([
-        $_POST['nombre'],
-        $_POST['categoria'],
-        $_POST['precio'],
-        $_POST['stock'],
-        $_POST['descripcion']
-    ]);
-    header("Location: index.php");
-    exit;
+    $nombre = trim($_POST['nombre']);
+    $categoria = trim($_POST['categoria']);
+    $precio = $_POST['precio'];
+    $stock = $_POST['stock'];
+    $descripcion = trim($_POST['descripcion']);
+    $fechaCreacion = date('Y-m-d H:i:s');
+
+    if ($precio < 0) {
+        $mensaje = "Error: el precio no puede ser negativo.";
+    } elseif ($stock < 0) {
+        $mensaje = "Error: el stock no puede ser negativo.";
+    } else {
+        $stmt = $pdo->prepare("
+            INSERT INTO productos (nombre, categoria, precio, stock, descripcion, fecha_creacion)
+            VALUES (?, ?, ?, ?, ?, ?)
+        ");
+
+        $stmt->execute([
+            $nombre,
+            $categoria,
+            $precio,
+            $stock,
+            $descripcion,
+            $fechaCreacion
+        ]);
+
+        header("Location: index.php");
+        exit;
+    }
 }
 
-/* ===== ELIMINAR ===== */
+/* ===== ELIMINAR PRODUCTO ===== */
 if (isset($_GET['eliminar'])) {
     $stmt = $pdo->prepare("DELETE FROM productos WHERE id = ?");
     $stmt->execute([$_GET['eliminar']]);
+
     header("Location: index.php");
     exit;
 }
 
-/* ===== LEER ===== */
-$productos = $pdo->query("SELECT * FROM productos ORDER BY id DESC")->fetchAll();
+/* ===== LEER PRODUCTOS ===== */
+$productos = $pdo->query("SELECT * FROM productos ORDER BY id DESC")->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <!DOCTYPE html>
@@ -41,6 +60,7 @@ $productos = $pdo->query("SELECT * FROM productos ORDER BY id DESC")->fetchAll()
             background: #f4f6f8;
             padding: 30px;
         }
+
         .container {
             max-width: 1000px;
             background: #fff;
@@ -49,15 +69,57 @@ $productos = $pdo->query("SELECT * FROM productos ORDER BY id DESC")->fetchAll()
             border-radius: 8px;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
         }
+
         h1, h2 {
             color: #2c3e50;
         }
+
+        .descripcion {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            color: #1e3a8a;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .integrantes, .crud-info, .mockup {
+            margin-bottom: 25px;
+            padding: 18px;
+            border-radius: 8px;
+            background: #f9fafb;
+            border: 1px solid #d1d5db;
+        }
+
+        .integrantes ul, .crud-info ul {
+            margin: 10px 0 0 20px;
+            padding: 0;
+        }
+
+        .integrantes li, .crud-info li {
+            margin-bottom: 8px;
+        }
+
+        .mockup img {
+            max-width: 100%;
+            border-radius: 8px;
+            border: 1px solid #cbd5e1;
+            margin-top: 12px;
+        }
+
+        label {
+            font-weight: bold;
+            color: #374151;
+        }
+
         input, textarea {
             width: 100%;
             padding: 8px;
-            margin-top: 5px; 
+            margin-top: 5px;
             margin-bottom: 15px;
+            box-sizing: border-box;
         }
+
         button {
             background: #2563eb;
             color: white;
@@ -65,27 +127,55 @@ $productos = $pdo->query("SELECT * FROM productos ORDER BY id DESC")->fetchAll()
             padding: 10px 18px;
             border-radius: 5px;
             cursor: pointer;
+            font-weight: bold;
         }
+
+        button:hover {
+            background: #1d4ed8;
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 25px;
         }
+
         th, td {
             padding: 10px;
             border-bottom: 1px solid #ddd;
             text-align: left;
         }
+
         th {
             background: #1f2937;
             color: white;
         }
+
+        tr:nth-child(even) {
+            background: #f9fafb;
+        }
+
         a {
             text-decoration: none;
             font-weight: bold;
         }
+
+        .editar {
+            color: #2563eb;
+        }
+
         .eliminar {
             color: red;
+        }
+
+        .mensaje-error {
+            background: #fee2e2;
+            border: 1px solid #fca5a5;
+            color: #991b1b;
+            padding: 12px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            font-weight: bold;
         }
     </style>
 </head>
@@ -95,8 +185,48 @@ $productos = $pdo->query("SELECT * FROM productos ORDER BY id DESC")->fetchAll()
 
     <h1>Tienda de Artículos Tecnológicos</h1>
 
+    <div class="descripcion">
+        Aplicación web dinámica desarrollada en PHP con base de datos SQLite.
+        Permite gestionar productos tecnológicos mediante operaciones CRUD.
+    </div>
+
+    <section class="integrantes">
+        <h2>Integrantes del Proyecto</h2>
+        <ul>
+            <li>Gabriel Lebien</li>
+            <li>Simón Pérez</li>
+            <li>Sebastián Valderas</li>
+        </ul>
+    </section>
+
+    <section class="mockup">
+        <h2>Mockup de la Aplicación</h2>
+        <p>
+            A continuación, se presenta una imagen referencial de la interfaz principal
+            de la aplicación utilizada para representar el diseño del sistema CRUD.
+        </p>
+        <img src="mockup.jpeg" alt="Mockup de la aplicación Tienda Tecnológica">
+    </section>
+
+    <section class="crud-info">
+        <h2>Descripción de Operaciones CRUD</h2>
+        <ul>
+            <li><strong>Crear:</strong> permite registrar un nuevo producto con nombre, categoría, precio, stock y descripción.</li>
+            <li><strong>Leer:</strong> permite visualizar en una tabla todos los productos almacenados en la base de datos.</li>
+            <li><strong>Modificar:</strong> permite editar los datos de un producto existente mediante la opción Editar.</li>
+            <li><strong>Borrar:</strong> permite eliminar un producto del listado mediante la opción Eliminar.</li>
+        </ul>
+    </section>
+
+    <?php if ($mensaje): ?>
+        <div class="mensaje-error">
+            <?= htmlspecialchars($mensaje) ?>
+        </div>
+    <?php endif; ?>
+
     <!-- ===== CREAR ===== -->
     <h2>Crear Producto</h2>
+
     <form method="POST">
         <label>Nombre del producto</label>
         <input type="text" name="nombre" required>
@@ -105,10 +235,10 @@ $productos = $pdo->query("SELECT * FROM productos ORDER BY id DESC")->fetchAll()
         <input type="text" name="categoria" required>
 
         <label>Precio</label>
-        <input type="number" name="precio" required>
+        <input type="number" name="precio" min="0" step="0.01" required>
 
         <label>Stock</label>
-        <input type="number" name="stock" required>
+        <input type="number" name="stock" min="0" required>
 
         <label>Descripción</label>
         <textarea name="descripcion" required></textarea>
@@ -127,29 +257,34 @@ $productos = $pdo->query("SELECT * FROM productos ORDER BY id DESC")->fetchAll()
             <th>Descripción</th>
             <th>Precio</th>
             <th>Stock</th>
-            <th>Fecha</th>
+            <th>Fecha y hora</th>
             <th>Acciones CRUD</th>
         </tr>
 
-        <?php foreach ($productos as $p): ?>
-        <tr>
-            <td><?= $p['id'] ?></td>
-            <td><?= htmlspecialchars($p['nombre']) ?></td>
-            <td><?= htmlspecialchars($p['categoria']) ?></td>
-            <td><?= htmlspecialchars($p['descripcion']) ?></td>
-            <td>$<?= number_format($p['precio'], 0, ',', '.') ?></td>
-            <td><?= $p['stock'] ?></td>
-            <td><?= $p['fecha_creacion'] ?></td>
-            <td>
-                <!-- Update simple (puede ampliarse) -->
-                <a href="editar.php?id=<?= $p['id'] ?>">Editar</a> |
-                <a class="eliminar" href="?eliminar=<?= $p['id'] ?>"
-                   onclick="return confirm('¿Eliminar producto?')">
-                   Eliminar
-                </a>
-            </td>
-        </tr>
-        <?php endforeach; ?>
+        <?php if (count($productos) > 0): ?>
+            <?php foreach ($productos as $p): ?>
+                <tr>
+                    <td><?= htmlspecialchars($p['id']) ?></td>
+                    <td><?= htmlspecialchars($p['nombre']) ?></td>
+                    <td><?= htmlspecialchars($p['categoria']) ?></td>
+                    <td><?= htmlspecialchars($p['descripcion']) ?></td>
+                    <td>$<?= number_format($p['precio'], 0, ',', '.') ?></td>
+                    <td><?= htmlspecialchars($p['stock']) ?></td>
+                    <td><?= htmlspecialchars($p['fecha_creacion']) ?></td>
+                    <td>
+                        <a class="editar" href="editar.php?id=<?= $p['id'] ?>">Editar</a> |
+                        <a class="eliminar" href="?eliminar=<?= $p['id'] ?>"
+                           onclick="return confirm('¿Eliminar producto?')">
+                           Eliminar
+                        </a>
+                    </td>
+                </tr>
+            <?php endforeach; ?>
+        <?php else: ?>
+            <tr>
+                <td colspan="8">No existen productos registrados.</td>
+            </tr>
+        <?php endif; ?>
     </table>
 
 </div>
