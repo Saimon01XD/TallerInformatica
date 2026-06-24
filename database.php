@@ -15,6 +15,8 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
+date_default_timezone_set('America/Santiago');
+
 $rutaDb = __DIR__ . "/tienda.db";
 
 try {
@@ -30,15 +32,14 @@ try {
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             nombre TEXT NOT NULL,
             categoria TEXT NOT NULL,
-            precio REAL NOT NULL,
-            stock INTEGER NOT NULL,
+            precio REAL NOT NULL CHECK (precio >= 0),
+            stock INTEGER NOT NULL CHECK (stock >= 0),
             descripcion TEXT NOT NULL,
-            fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP
+            fecha_creacion TEXT NOT NULL
         )
     ");
 
-
 } catch (Exception $e) {
-    echo "Error al crear la base de datos: " . $e->getMessage() . "\n";
+    die("Error de conexión o creación de base de datos: " . $e->getMessage());
 }
 ?>
