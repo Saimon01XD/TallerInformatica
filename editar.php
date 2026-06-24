@@ -90,7 +90,7 @@ if (isset($_POST['actualizar'])) {
 
 <div class="container">
 
-    <h1>✏️ Editar Producto</h1>
+    <h1> Editar Producto</h1>
 
     <form method="POST">
         <label>Nombre del producto</label>

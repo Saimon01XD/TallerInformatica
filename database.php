@@ -33,7 +33,7 @@ try {
             precio REAL NOT NULL,
             stock INTEGER NOT NULL,
             descripcion TEXT NOT NULL,
-            fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP
+            fecha_creacion DATETIME DEFAULT (datetime('now','localtime'))
         )
     ");
 
