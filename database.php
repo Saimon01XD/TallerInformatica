@@ -4,9 +4,17 @@
     Configuración de la base de datos SQLite
 */
 
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
+// Si la petición es vía navegador, no mostrar mensajes de depuración
+if (php_sapi_name() !== 'cli') {
+    ini_set('display_errors', 0);
+    ini_set('display_startup_errors', 0);
+    error_reporting(0);
+} else {
+    // Solo mostrar errores en consola (CLI)
+    ini_set('display_errors', 1);
+    ini_set('display_startup_errors', 1);
+    error_reporting(E_ALL);
+}
 
 date_default_timezone_set('America/Santiago');
 
@@ -16,7 +24,6 @@ if (!is_dir($dataDir)) {
     mkdir($dataDir, 0755, true);
 }
 
-// Guardar en data/ para persistencia
 $rutaDb = $dataDir . "/tienda.db";
 
 try {
@@ -40,28 +47,36 @@ try {
         )
     ");
 
-    // Verificar si hay datos de ejemplo
-    $stmt = $pdo->query("SELECT COUNT(*) FROM productos");
-    $count = $stmt->fetchColumn();
-    
-    if ($count == 0) {
-        // Insertar productos de ejemplo
-        $productosEjemplo = [
-            ['Laptop HP', 'Computadoras', 899.99, 5, 'Laptop HP Pavilion con 16GB RAM', date('Y-m-d H:i:s')],
-            ['Mouse Logitech', 'Accesorios', 29.99, 15, 'Mouse inalámbrico Logitech MX', date('Y-m-d H:i:s')],
-            ['Monitor Samsung', 'Monitores', 249.99, 3, 'Monitor 24" Samsung Full HD', date('Y-m-d H:i:s')]
-        ];
+    // Insertar productos de ejemplo SOLO si estamos en CLI (consola)
+    if (php_sapi_name() === 'cli') {
+        $stmt = $pdo->query("SELECT COUNT(*) FROM productos");
+        $count = $stmt->fetchColumn();
         
-        $insert = $pdo->prepare("INSERT INTO productos (nombre, categoria, precio, stock, descripcion, fecha_creacion) VALUES (?, ?, ?, ?, ?, ?)");
-        foreach ($productosEjemplo as $producto) {
-            $insert->execute($producto);
+        if ($count == 0) {
+            $productosEjemplo = [
+                ['Laptop HP', 'Computadoras', 899.99, 5, 'Laptop HP Pavilion con 16GB RAM', date('Y-m-d H:i:s')],
+                ['Mouse Logitech', 'Accesorios', 29.99, 15, 'Mouse inalámbrico Logitech MX', date('Y-m-d H:i:s')],
+                ['Monitor Samsung', 'Monitores', 249.99, 3, 'Monitor 24" Samsung Full HD', date('Y-m-d H:i:s')]
+            ];
+            
+            $insert = $pdo->prepare("INSERT INTO productos (nombre, categoria, precio, stock, descripcion, fecha_creacion) VALUES (?, ?, ?, ?, ?, ?)");
+            foreach ($productosEjemplo as $producto) {
+                $insert->execute($producto);
+            }
+            // Este mensaje solo se verá en consola
+            echo "Productos de ejemplo insertados.\n";
         }
-        echo "Productos de ejemplo insertados.\n";
     }
 
-    echo "Base de datos creada/conectada exitosamente en: " . $rutaDb . "\n";
-
 } catch (Exception $e) {
-    die("Error de conexión o creación de base de datos: " . $e->getMessage());
+    // Manejar errores de forma silenciosa para el navegador
+    if (php_sapi_name() === 'cli') {
+        die("Error: " . $e->getMessage());
+    }
+    // Para el navegador, simplemente lanzar la excepción
+    throw $e;
 }
+
+// Retornar la conexión PDO para usar en otros archivos
+return $pdo;
 ?>
