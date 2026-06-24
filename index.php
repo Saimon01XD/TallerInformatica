@@ -1,5 +1,4 @@
 <?php
-date_default_timezone_set('America/Santiago');
 require 'database.php';
 
 /* ===== CREAR PRODUCTO ===== */
@@ -140,9 +139,7 @@ $productos = $pdo->query("SELECT * FROM productos ORDER BY id DESC")->fetchAll()
             <td><?= htmlspecialchars($p['descripcion']) ?></td>
             <td>$<?= number_format($p['precio'], 0, ',', '.') ?></td>
             <td><?= $p['stock'] ?></td>
-            <td>
-            <?= date("d-m-Y H:i", strtotime($p['fecha_creacion'])) ?>
-            </td>
+            <td><?= $p['fecha_creacion'] ?></td>
             <td>
                 <!-- Update simple (puede ampliarse) -->
                 <a href="editar.php?id=<?= $p['id'] ?>">Editar</a> |
