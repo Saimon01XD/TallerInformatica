@@ -40,14 +40,7 @@ if (isset($_POST['actualizar'])) {
             WHERE id = ?
         ");
 
-        $stmt->execute([
-            $nombre,
-            $categoria,
-            $precio,
-            $stock,
-            $descripcion,
-            $id
-        ]);
+        $stmt->execute([$nombre, $categoria, $precio, $stock, $descripcion, $id]);
 
         header("Location: index.php");
         exit;
@@ -61,71 +54,19 @@ if (isset($_POST['actualizar'])) {
     <meta charset="UTF-8">
     <title>Editar Producto</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #f4f6f8;
-            padding: 30px;
-        }
-
-        .container {
-            max-width: 700px;
-            background: #fff;
-            padding: 25px;
-            margin: auto;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-        }
-
-        h1 {
-            color: #2c3e50;
-        }
-
-        label {
-            font-weight: bold;
-            color: #374151;
-        }
-
-        input, textarea {
-            width: 100%;
-            padding: 8px;
-            margin-top: 5px;
-            margin-bottom: 15px;
-            box-sizing: border-box;
-        }
-
-        button {
-            background: #16a34a;
-            color: white;
-            border: none;
-            padding: 10px 18px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-
-        a {
-            display: inline-block;
-            margin-top: 15px;
-            text-decoration: none;
-            color: #2563eb;
-            font-weight: bold;
-        }
-
-        .mensaje-error {
-            background: #fee2e2;
-            border: 1px solid #fca5a5;
-            color: #991b1b;
-            padding: 12px;
-            border-radius: 5px;
-            margin-bottom: 15px;
-            font-weight: bold;
-        }
+        body { font-family: Arial, sans-serif; background: #f4f6f8; padding: 30px; }
+        .container { max-width: 700px; background: #fff; padding: 25px; margin: auto; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        h1 { color: #2c3e50; }
+        label { font-weight: bold; color: #374151; }
+        input, textarea { width: 100%; padding: 8px; margin-top: 5px; margin-bottom: 15px; box-sizing: border-box; }
+        button { background: #16a34a; color: white; border: none; padding: 10px 18px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        a { display: inline-block; margin-top: 15px; text-decoration: none; color: #2563eb; font-weight: bold; }
+        .mensaje-error { background: #fee2e2; border: 1px solid #fca5a5; color: #991b1b; padding: 12px; border-radius: 5px; margin-bottom: 15px; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="container">
-
     <h1>Editar Producto</h1>
 
     <?php if ($mensaje): ?>
@@ -154,7 +95,6 @@ if (isset($_POST['actualizar'])) {
     </form>
 
     <a href="index.php">⬅ Volver al listado</a>
-
 </div>
 
 </body>

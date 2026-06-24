@@ -21,16 +21,7 @@ if (isset($_POST['crear'])) {
             INSERT INTO productos (nombre, categoria, precio, stock, descripcion, fecha_creacion)
             VALUES (?, ?, ?, ?, ?, ?)
         ");
-
-        $stmt->execute([
-            $nombre,
-            $categoria,
-            $precio,
-            $stock,
-            $descripcion,
-            $fechaCreacion
-        ]);
-
+        $stmt->execute([$nombre, $categoria, $precio, $stock, $descripcion, $fechaCreacion]);
         header("Location: index.php");
         exit;
     }
@@ -40,13 +31,18 @@ if (isset($_POST['crear'])) {
 if (isset($_GET['eliminar'])) {
     $stmt = $pdo->prepare("DELETE FROM productos WHERE id = ?");
     $stmt->execute([$_GET['eliminar']]);
-
     header("Location: index.php");
     exit;
 }
 
 /* ===== LEER PRODUCTOS ===== */
-$productos = $pdo->query("SELECT * FROM productos ORDER BY id DESC")->fetchAll(PDO::FETCH_ASSOC);
+// Usar try-catch por si la tabla aún no existe
+try {
+    $productos = $pdo->query("SELECT * FROM productos ORDER BY id DESC")->fetchAll(PDO::FETCH_ASSOC);
+} catch (Exception $e) {
+    $productos = [];
+    $mensaje = "Aviso: La tabla de productos no existe. Por favor, ejecuta php init_db.php en la terminal.";
+}
 ?>
 
 <!DOCTYPE html>
@@ -55,136 +51,33 @@ $productos = $pdo->query("SELECT * FROM productos ORDER BY id DESC")->fetchAll(P
     <meta charset="UTF-8">
     <title>Tienda Tecnológica</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #f4f6f8;
-            padding: 30px;
-        }
-
-        .container {
-            max-width: 1000px;
-            background: #fff;
-            padding: 25px;
-            margin: auto;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-        }
-
-        h1, h2 {
-            color: #2c3e50;
-        }
-
-        .descripcion {
-            background: #eff6ff;
-            border: 1px solid #bfdbfe;
-            color: #1e3a8a;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-
-        .integrantes, .crud-info, .mockup {
-            margin-bottom: 25px;
-            padding: 18px;
-            border-radius: 8px;
-            background: #f9fafb;
-            border: 1px solid #d1d5db;
-        }
-
-        .integrantes ul, .crud-info ul {
-            margin: 10px 0 0 20px;
-            padding: 0;
-        }
-
-        .integrantes li, .crud-info li {
-            margin-bottom: 8px;
-        }
-
-        .mockup img {
-            max-width: 100%;
-            border-radius: 8px;
-            border: 1px solid #cbd5e1;
-            margin-top: 12px;
-        }
-
-        label {
-            font-weight: bold;
-            color: #374151;
-        }
-
-        input, textarea {
-            width: 100%;
-            padding: 8px;
-            margin-top: 5px;
-            margin-bottom: 15px;
-            box-sizing: border-box;
-        }
-
-        button {
-            background: #2563eb;
-            color: white;
-            border: none;
-            padding: 10px 18px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-
-        button:hover {
-            background: #1d4ed8;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 25px;
-        }
-
-        th, td {
-            padding: 10px;
-            border-bottom: 1px solid #ddd;
-            text-align: left;
-        }
-
-        th {
-            background: #1f2937;
-            color: white;
-        }
-
-        tr:nth-child(even) {
-            background: #f9fafb;
-        }
-
-        a {
-            text-decoration: none;
-            font-weight: bold;
-        }
-
-        .editar {
-            color: #2563eb;
-        }
-
-        .eliminar {
-            color: red;
-        }
-
-        .mensaje-error {
-            background: #fee2e2;
-            border: 1px solid #fca5a5;
-            color: #991b1b;
-            padding: 12px;
-            border-radius: 5px;
-            margin-bottom: 15px;
-            font-weight: bold;
-        }
+        body { font-family: Arial, sans-serif; background: #f4f6f8; padding: 30px; }
+        .container { max-width: 1000px; background: #fff; padding: 25px; margin: auto; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        h1, h2 { color: #2c3e50; }
+        .descripcion { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e3a8a; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        .integrantes, .crud-info, .mockup { margin-bottom: 25px; padding: 18px; border-radius: 8px; background: #f9fafb; border: 1px solid #d1d5db; }
+        .integrantes ul, .crud-info ul { margin: 10px 0 0 20px; padding: 0; }
+        .integrantes li, .crud-info li { margin-bottom: 8px; }
+        .mockup img { max-width: 100%; border-radius: 8px; border: 1px solid #cbd5e1; margin-top: 12px; }
+        label { font-weight: bold; color: #374151; }
+        input, textarea { width: 100%; padding: 8px; margin-top: 5px; margin-bottom: 15px; box-sizing: border-box; }
+        button { background: #2563eb; color: white; border: none; padding: 10px 18px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        button:hover { background: #1d4ed8; }
+        table { width: 100%; border-collapse: collapse; margin-top: 25px; }
+        th, td { padding: 10px; border-bottom: 1px solid #ddd; text-align: left; }
+        th { background: #1f2937; color: white; }
+        tr:nth-child(even) { background: #f9fafb; }
+        a { text-decoration: none; font-weight: bold; }
+        .editar { color: #2563eb; }
+        .eliminar { color: red; }
+        .mensaje-error { background: #fee2e2; border: 1px solid #fca5a5; color: #991b1b; padding: 12px; border-radius: 5px; margin-bottom: 15px; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="container">
-
     <h1>Tienda de Artículos Tecnológicos</h1>
-
+    
     <div class="descripcion">
         Aplicación web dinámica desarrollada en PHP con base de datos SQLite.
         Permite gestionar productos tecnológicos mediante operaciones CRUD.
@@ -199,34 +92,13 @@ $productos = $pdo->query("SELECT * FROM productos ORDER BY id DESC")->fetchAll(P
         </ul>
     </section>
 
-    <section class="mockup">
-        <h2>Mockup de la Aplicación</h2>
-        <p>
-            A continuación, se presenta una imagen referencial de la interfaz principal
-            de la aplicación utilizada para representar el diseño del sistema CRUD.
-        </p>
-        <img src="mockup.jpeg" alt="Mockup de la aplicación Tienda Tecnológica">
-    </section>
-
-    <section class="crud-info">
-        <h2>Descripción de Operaciones CRUD</h2>
-        <ul>
-            <li><strong>Crear:</strong> permite registrar un nuevo producto con nombre, categoría, precio, stock y descripción.</li>
-            <li><strong>Leer:</strong> permite visualizar en una tabla todos los productos almacenados en la base de datos.</li>
-            <li><strong>Modificar:</strong> permite editar los datos de un producto existente mediante la opción Editar.</li>
-            <li><strong>Borrar:</strong> permite eliminar un producto del listado mediante la opción Eliminar.</li>
-        </ul>
-    </section>
-
     <?php if ($mensaje): ?>
         <div class="mensaje-error">
             <?= htmlspecialchars($mensaje) ?>
         </div>
     <?php endif; ?>
 
-    <!-- ===== CREAR ===== -->
     <h2>Crear Producto</h2>
-
     <form method="POST">
         <label>Nombre del producto</label>
         <input type="text" name="nombre" required>
@@ -246,9 +118,7 @@ $productos = $pdo->query("SELECT * FROM productos ORDER BY id DESC")->fetchAll(P
         <button type="submit" name="crear">Crear Producto</button>
     </form>
 
-    <!-- ===== LEER ===== -->
     <h2>Leer, Modificar y Borrar Productos</h2>
-
     <table>
         <tr>
             <th>ID</th>
@@ -258,7 +128,7 @@ $productos = $pdo->query("SELECT * FROM productos ORDER BY id DESC")->fetchAll(P
             <th>Precio</th>
             <th>Stock</th>
             <th>Fecha y hora</th>
-            <th>Acciones CRUD</th>
+            <th>Acciones</th>
         </tr>
 
         <?php if (count($productos) > 0): ?>
@@ -286,7 +156,6 @@ $productos = $pdo->query("SELECT * FROM productos ORDER BY id DESC")->fetchAll(P
             </tr>
         <?php endif; ?>
     </table>
-
 </div>
 
 </body>
