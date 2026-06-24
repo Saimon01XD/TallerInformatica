@@ -37,9 +37,6 @@ try {
         )
     ");
 
-    echo "Base de datos creada correctamente.\n";
-    echo "Archivo generado: tienda.db\n";
-    echo "Tabla creada: productos\n";
 
 } catch (Exception $e) {
     echo "Error al crear la base de datos: " . $e->getMessage() . "\n";
