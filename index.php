@@ -1,95 +1,158 @@
+<?php
+require 'database.php';
+
+/* ===== CREAR PRODUCTO ===== */
+if (isset($_POST['crear'])) {
+    $stmt = $pdo->prepare("
+        INSERT INTO productos (nombre, categoria, precio, stock, descripcion)
+        VALUES (?, ?, ?, ?, ?)
+    ");
+    $stmt->execute([
+        $_POST['nombre'],
+        $_POST['categoria'],
+        $_POST['precio'],
+        $_POST['stock'],
+        $_POST['descripcion']
+    ]);
+    header("Location: index.php");
+    exit;
+}
+
+/* ===== ELIMINAR ===== */
+if (isset($_GET['eliminar'])) {
+    $stmt = $pdo->prepare("DELETE FROM productos WHERE id = ?");
+    $stmt->execute([$_GET['eliminar']]);
+    header("Location: index.php");
+    exit;
+}
+
+/* ===== LEER ===== */
+$productos = $pdo->query("SELECT * FROM productos ORDER BY id DESC")->fetchAll();
+?>
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Tienda de Artículos Tecnológicos</title>
+    <title>Tienda Tecnológica</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
-            margin: 40px;
+            background: #f4f6f8;
+            padding: 30px;
         }
-
         .container {
-            background-color: #ffffff;
+            max-width: 1000px;
+            background: #fff;
             padding: 25px;
-            border-radius: 8px;
-            max-width: 900px;
             margin: auto;
+            border-radius: 8px;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
         }
-
         h1, h2 {
             color: #2c3e50;
         }
-
-        ul {
-            margin-left: 20px;
+        input, textarea {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px; 
+            margin-bottom: 15px;
         }
-
-        .mockup {
-            text-align: center;
+        button {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
             margin-top: 25px;
-            margin-bottom: 25px;
         }
-
-        .mockup img {
-            max-width: 100%;
-            width: 700px;
-            border-radius: 10px;
-            border: 1px solid #ddd;
-            box-shadow: 0 0 8px rgba(0,0,0,0.15);
+        th, td {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+            text-align: left;
         }
-
-        .mockup p {
-            font-size: 14px;
-            color: #555;
-            margin-top: 8px;
+        th {
+            background: #1f2937;
+            color: white;
+        }
+        a {
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .eliminar {
+            color: red;
         }
     </style>
 </head>
 <body>
 
 <div class="container">
+
     <h1>🛒 Tienda de Artículos Tecnológicos</h1>
 
-    <h2>👥 Integrantes del grupo</h2>
-    <ul>
-        <li>Gabriel Lebien</li>
-        <li>Simón Pérez</li>
-        <li>Sebastián Valderas</li>
-    </ul>
-
-    <h2>📱 Descripción de la aplicación</h2>
-    <p>
-        Esta aplicación corresponde a una tienda de artículos tecnológicos cuyo objetivo es
-        administrar productos como computadores, celulares, accesorios y componentes electrónicos.
-        La aplicación permite gestionar la información de los productos de manera ordenada,
-        facilitando el control del inventario y la administración del negocio.
+    <p style="background:#e8f0fe;padding:10px;border-radius:5px;">
+        Aplicación desplegada en contenedores Docker. Servicio web con base de datos SQLite.
     </p>
 
-    <h2>🖼️ Mockup de la aplicación</h2>
-    <div class="mockup">
-        <img src="mockup.jpeg" alt="Mockup de la tienda de artículos tecnológicos">
-        <p>Mockup referencial de la interfaz principal de la aplicación.</p>
-    </div>
+    <!-- ===== CREAR ===== -->
+    <h2>Crear Producto</h2>
+    <form method="POST">
+        <label>Nombre del producto</label>
+        <input type="text" name="nombre" required>
 
-    <h2>🔄 Operaciones CRUD</h2>
+        <label>Categoría</label>
+        <input type="text" name="categoria" required>
 
-    <p><strong>Crear (Create):</strong>  
-    Permite registrar nuevos productos en el sistema, ingresando datos como nombre, categoría,
-    precio, stock y descripción.</p>
+        <label>Precio</label>
+        <input type="number" name="precio" required>
 
-    <p><strong>Leer (Read):</strong>  
-    Permite visualizar el listado de productos disponibles y consultar el detalle de cada artículo.</p>
+        <label>Stock</label>
+        <input type="number" name="stock" required>
 
-    <p><strong>Actualizar (Update):</strong>  
-    Permite modificar la información de los productos existentes, como actualizar precios,
-    stock o descripciones.</p>
+        <label>Descripción</label>
+        <textarea name="descripcion" required></textarea>
 
-    <p><strong>Eliminar (Delete):</strong>  
-    Permite eliminar productos del sistema cuando ya no estén disponibles o se desee retirarlos
-    del catálogo.</p>
+        <button type="submit" name="crear">Crear Producto</button>
+    </form>
+
+    <!-- ===== LEER ===== -->
+    <h2>Leer, Modificar y Borrar Productos</h2>
+
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>Categoría</th>
+            <th>Precio</th>
+            <th>Stock</th>
+            <th>Fecha</th>
+            <th>Acciones CRUD</th>
+        </tr>
+
+        <?php foreach ($productos as $p): ?>
+        <tr>
+            <td><?= $p['id'] ?></td>
+            <td><?= htmlspecialchars($p['nombre']) ?></td>
+            <td><?= htmlspecialchars($p['categoria']) ?></td>
+            <td>$<?= number_format($p['precio'], 0, ',', '.') ?></td>
+            <td><?= $p['stock'] ?></td>
+            <td><?= $p['fecha_creacion'] ?></td>
+            <td>
+                <!-- Update simple (puede ampliarse) -->
+                <a href="editar.php?id=<?= $p['id'] ?>">Editar</a> |
+                <a class="eliminar" href="?eliminar=<?= $p['id'] ?>"
+                   onclick="return confirm('¿Eliminar producto?')">
+                   Eliminar
+                </a>
+            </td>
+        </tr>
+        <?php endforeach; ?>
+    </table>
 
 </div>
 
