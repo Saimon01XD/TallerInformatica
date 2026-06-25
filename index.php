@@ -205,14 +205,6 @@ try {
         </ul>
     </section>
 
-    <section class="mockup">
-        <h2>Mockup de la Aplicación</h2>
-        <p>
-            A continuación, se presenta un mockup visual de la aplicación web desarrollada,
-            utilizado como referencia para representar la interfaz principal del sistema CRUD.
-        </p>
-        <img src="mockup.jpeg" alt="Mockup de la aplicación Tienda Tecnológica">
-    </section>
 
     <section class="crud-info">
         <h2>Descripción de Operaciones CRUD</h2>
