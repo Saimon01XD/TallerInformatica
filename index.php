@@ -5,33 +5,19 @@ require 'database.php';
 $mensajeLogin = "";
 $mensajeRegistro = "";
 
-/* ===== CREAR TABLA USUARIOS SI NO EXISTE ===== */
-try {
-    $pdo->exec("
-        CREATE TABLE IF NOT EXISTS usuarios (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            correo TEXT NOT NULL UNIQUE,
-            password TEXT NOT NULL,
-            fecha_registro TEXT NOT NULL
-        )
-    ");
-} catch (Exception $e) {
-    $mensajeLogin = "Error al preparar la base de datos: " . $e->getMessage();
-}
-
-/* ===== SI YA ESTÁ LOGEADO, IR AL CRUD ===== */
+/* Si ya existe sesión, enviar directamente al CRUD */
 if (isset($_SESSION['usuario_id'])) {
     header("Location: crud.php");
     exit;
 }
 
 /* ===== REGISTRO DE USUARIO ===== */
-if (isset($_POST['registrar_usuario'])) {
-    $correo = trim($_POST['correo_registro']);
-    $passwordPlano = trim($_POST['password_registro']);
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['registrar_usuario'])) {
+    $correo = trim($_POST['correo_registro'] ?? '');
+    $passwordPlano = trim($_POST['password_registro'] ?? '');
     $fechaRegistro = date('Y-m-d H:i:s');
 
-    if (empty($correo) || empty($passwordPlano)) {
+    if ($correo === '' || $passwordPlano === '') {
         $mensajeRegistro = "Debes ingresar correo y contraseña.";
     } elseif (!filter_var($correo, FILTER_VALIDATE_EMAIL)) {
         $mensajeRegistro = "El correo ingresado no tiene un formato válido.";
@@ -39,41 +25,53 @@ if (isset($_POST['registrar_usuario'])) {
         $mensajeRegistro = "La contraseña debe tener al menos 4 caracteres.";
     } else {
         try {
-            $passwordHash = password_hash($passwordPlano, PASSWORD_DEFAULT);
+            $stmtVerificar = $pdo->prepare("SELECT id FROM usuarios WHERE correo = ?");
+            $stmtVerificar->execute([$correo]);
+            $usuarioExiste = $stmtVerificar->fetch(PDO::FETCH_ASSOC);
 
-            $stmt = $pdo->prepare("
-                INSERT INTO usuarios (correo, password, fecha_registro)
-                VALUES (?, ?, ?)
-            ");
-            $stmt->execute([$correo, $passwordHash, $fechaRegistro]);
+            if ($usuarioExiste) {
+                $mensajeRegistro = "Este correo ya está registrado. Intenta iniciar sesión.";
+            } else {
+                $passwordHash = password_hash($passwordPlano, PASSWORD_DEFAULT);
 
-            $mensajeRegistro = "Usuario registrado correctamente. Ahora puedes iniciar sesión.";
+                $stmt = $pdo->prepare("
+                    INSERT INTO usuarios (correo, password, fecha_registro)
+                    VALUES (?, ?, ?)
+                ");
+                $stmt->execute([$correo, $passwordHash, $fechaRegistro]);
+
+                $mensajeRegistro = "Usuario registrado correctamente. Ahora puedes iniciar sesión.";
+            }
         } catch (Exception $e) {
-            $mensajeRegistro = "No se pudo registrar el usuario. Puede que el correo ya exista.";
+            $mensajeRegistro = "Error al registrar usuario: " . $e->getMessage();
         }
     }
 }
 
 /* ===== LOGIN DE USUARIO ===== */
-if (isset($_POST['login_usuario'])) {
-    $correo = trim($_POST['correo_login']);
-    $passwordPlano = trim($_POST['password_login']);
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login_usuario'])) {
+    $correo = trim($_POST['correo_login'] ?? '');
+    $passwordPlano = trim($_POST['password_login'] ?? '');
 
-    if (empty($correo) || empty($passwordPlano)) {
+    if ($correo === '' || $passwordPlano === '') {
         $mensajeLogin = "Debes ingresar correo y contraseña.";
     } else {
-        $stmt = $pdo->prepare("SELECT * FROM usuarios WHERE correo = ?");
-        $stmt->execute([$correo]);
-        $usuario = $stmt->fetch(PDO::FETCH_ASSOC);
+        try {
+            $stmt = $pdo->prepare("SELECT * FROM usuarios WHERE correo = ?");
+            $stmt->execute([$correo]);
+            $usuario = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        if ($usuario && password_verify($passwordPlano, $usuario['password'])) {
-            $_SESSION['usuario_id'] = $usuario['id'];
-            $_SESSION['usuario_correo'] = $usuario['correo'];
+            if ($usuario && password_verify($passwordPlano, $usuario['password'])) {
+                $_SESSION['usuario_id'] = $usuario['id'];
+                $_SESSION['usuario_correo'] = $usuario['correo'];
 
-            header("Location: crud.php");
-            exit;
-        } else {
-            $mensajeLogin = "Correo o contraseña incorrectos. No puedes acceder al sistema.";
+                header("Location: crud.php");
+                exit;
+            } else {
+                $mensajeLogin = "Correo o contraseña incorrectos. No puedes acceder al sistema.";
+            }
+        } catch (Exception $e) {
+            $mensajeLogin = "Error al iniciar sesión: " . $e->getMessage();
         }
     }
 }
@@ -190,7 +188,7 @@ if (isset($_POST['login_usuario'])) {
 
     <div class="descripcion">
         Para acceder al sistema CRUD de productos tecnológicos, debes iniciar sesión con un usuario registrado.
-        Si aún no tienes cuenta, puedes registrarte desde esta misma pantalla.
+        Si aún no tienes cuenta, puedes registrarte desde esta pantalla.
     </div>
 
     <div class="login-grid">
@@ -204,14 +202,14 @@ if (isset($_POST['login_usuario'])) {
                 </div>
             <?php endif; ?>
 
-            <form method="POST">
+            <form method="POST" action="index.php">
                 <label>Correo electrónico</label>
                 <input type="email" name="correo_login" required>
 
                 <label>Contraseña</label>
                 <input type="password" name="password_login" required>
 
-                <button type="submit" name="login_usuario">Ingresar</button>
+                <button type="submit" name="login_usuario" value="1">Ingresar</button>
             </form>
         </div>
 
@@ -224,14 +222,14 @@ if (isset($_POST['login_usuario'])) {
                 </div>
             <?php endif; ?>
 
-            <form method="POST">
+            <form method="POST" action="index.php">
                 <label>Correo electrónico</label>
                 <input type="email" name="correo_registro" required>
 
                 <label>Contraseña</label>
                 <input type="password" name="password_registro" required>
 
-                <button type="submit" name="registrar_usuario">Crear cuenta</button>
+                <button type="submit" name="registrar_usuario" value="1">Crear cuenta</button>
             </form>
         </div>
 
