@@ -7,15 +7,15 @@ $mensajeRegistro = "";
 
 /* Si ya existe sesión, enviar directamente al CRUD */
 if (isset($_SESSION['usuario_id'])) {
-    header("Location: crud.php");
+    header("Location: crud.php?accion=consultar");
     exit;
 }
 
-/* ===== REGISTRO DE USUARIO ===== */
+/* Registro de usuario */
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['registrar_usuario'])) {
     $correo = trim($_POST['correo_registro'] ?? '');
     $passwordPlano = trim($_POST['password_registro'] ?? '');
-    $fechaRegistro = date('Y-m-d H:i:s');
+    $fechaRegistro = date('d/m/Y, H:i:s');
 
     if ($correo === '' || $passwordPlano === '') {
         $mensajeRegistro = "Debes ingresar correo y contraseña.";
@@ -40,6 +40,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['registrar_usuario']))
                 ");
                 $stmt->execute([$correo, $passwordHash, $fechaRegistro]);
 
+                registrarLog(
+                    $pdo,
+                    $correo,
+                    "Creación de usuario",
+                    "Tabla: usuarios | Usuario creado con correo: " . $correo
+                );
+
                 $mensajeRegistro = "Usuario registrado correctamente. Ahora puedes iniciar sesión.";
             }
         } catch (Exception $e) {
@@ -48,7 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['registrar_usuario']))
     }
 }
 
-/* ===== LOGIN DE USUARIO ===== */
+/* Login de usuario */
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login_usuario'])) {
     $correo = trim($_POST['correo_login'] ?? '');
     $passwordPlano = trim($_POST['password_login'] ?? '');
@@ -65,7 +72,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login_usuario'])) {
                 $_SESSION['usuario_id'] = $usuario['id'];
                 $_SESSION['usuario_correo'] = $usuario['correo'];
 
-                header("Location: crud.php");
+                registrarLog(
+                    $pdo,
+                    $usuario['correo'],
+                    "Inicio de sesión",
+                    "Tabla: usuarios | ID usuario: " . $usuario['id']
+                );
+
+                header("Location: crud.php?accion=consultar");
                 exit;
             } else {
                 $mensajeLogin = "Correo o contraseña incorrectos. No puedes acceder al sistema.";
