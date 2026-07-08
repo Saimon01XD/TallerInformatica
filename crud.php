@@ -8,40 +8,32 @@ if (!isset($_SESSION['usuario_id'])) {
 
 require 'database.php';
 
+$usuarioActual = $_SESSION['usuario_correo'];
 $mensaje = "";
+$accion = $_GET['accion'] ?? 'consultar';
 
-/* ===== CERRAR SESIÓN ===== */
+/* Cerrar sesión */
 if (isset($_GET['logout'])) {
+    registrarLog(
+        $pdo,
+        $usuarioActual,
+        "Cierre de sesión",
+        "Tabla: usuarios | Usuario cerró sesión"
+    );
+
     session_destroy();
     header("Location: index.php");
     exit;
 }
 
-/* ===== CREAR TABLA PRODUCTOS SI NO EXISTE ===== */
-try {
-    $pdo->exec("
-        CREATE TABLE IF NOT EXISTS productos (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            nombre TEXT NOT NULL,
-            categoria TEXT NOT NULL,
-            precio REAL NOT NULL CHECK (precio >= 0),
-            stock INTEGER NOT NULL CHECK (stock >= 0),
-            descripcion TEXT NOT NULL,
-            fecha_creacion TEXT NOT NULL
-        )
-    ");
-} catch (Exception $e) {
-    $mensaje = "Error al preparar la tabla productos: " . $e->getMessage();
-}
-
-/* ===== CREAR PRODUCTO ===== */
+/* Crear producto */
 if (isset($_POST['crear'])) {
     $nombre = trim($_POST['nombre']);
     $categoria = trim($_POST['categoria']);
     $precio = $_POST['precio'];
     $stock = $_POST['stock'];
     $descripcion = trim($_POST['descripcion']);
-    $fechaCreacion = date('Y-m-d H:i:s');
+    $fechaCreacion = date('d/m/Y, H:i:s');
 
     if ($precio < 0) {
         $mensaje = "Error: el precio no puede ser negativo.";
@@ -54,27 +46,47 @@ if (isset($_POST['crear'])) {
         ");
         $stmt->execute([$nombre, $categoria, $precio, $stock, $descripcion, $fechaCreacion]);
 
-        header("Location: crud.php");
+        $productoId = $pdo->lastInsertId();
+
+        registrarLog(
+            $pdo,
+            $usuarioActual,
+            "Crear registro",
+            "Tabla: productos | ID creado: " . $productoId . " | Nombre: " . $nombre
+        );
+
+        header("Location: crud.php?accion=consultar");
         exit;
     }
 }
 
-/* ===== ELIMINAR PRODUCTO ===== */
+/* Eliminar producto */
 if (isset($_GET['eliminar'])) {
-    $stmt = $pdo->prepare("DELETE FROM productos WHERE id = ?");
-    $stmt->execute([$_GET['eliminar']]);
+    $idEliminar = $_GET['eliminar'];
 
-    header("Location: crud.php");
+    $stmtConsulta = $pdo->prepare("SELECT * FROM productos WHERE id = ?");
+    $stmtConsulta->execute([$idEliminar]);
+    $productoEliminado = $stmtConsulta->fetch(PDO::FETCH_ASSOC);
+
+    $stmt = $pdo->prepare("DELETE FROM productos WHERE id = ?");
+    $stmt->execute([$idEliminar]);
+
+    registrarLog(
+        $pdo,
+        $usuarioActual,
+        "Eliminar registro",
+        "Tabla: productos | ID eliminado: " . $idEliminar . " | Nombre: " . ($productoEliminado['nombre'] ?? 'No disponible')
+    );
+
+    header("Location: crud.php?accion=eliminar");
     exit;
 }
 
-/* ===== LEER PRODUCTOS ===== */
-try {
-    $productos = $pdo->query("SELECT * FROM productos ORDER BY id DESC")->fetchAll(PDO::FETCH_ASSOC);
-} catch (Exception $e) {
-    $productos = [];
-    $mensaje = "Aviso: no se pudieron cargar los productos.";
-}
+/* Consultar productos */
+$productos = $pdo->query("SELECT * FROM productos ORDER BY id DESC")->fetchAll(PDO::FETCH_ASSOC);
+
+/* Consultar logs */
+$logs = $pdo->query("SELECT * FROM logs ORDER BY id DESC LIMIT 50")->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <!DOCTYPE html>
@@ -91,7 +103,7 @@ try {
         }
 
         .container {
-            max-width: 1000px;
+            max-width: 1100px;
             background: #fff;
             padding: 25px;
             margin: auto;
@@ -101,6 +113,24 @@ try {
 
         h1, h2 {
             color: #2c3e50;
+        }
+
+        .menu {
+            background: #1f2937;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+        }
+
+        .menu a {
+            color: white;
+            margin-right: 18px;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .menu a:hover {
+            text-decoration: underline;
         }
 
         .descripcion {
@@ -121,7 +151,7 @@ try {
             margin-bottom: 20px;
         }
 
-        .integrantes, .crud-info, .mockup {
+        .integrantes, .crud-info, .mockup, .seccion {
             margin-bottom: 25px;
             padding: 18px;
             border-radius: 8px;
@@ -136,10 +166,6 @@ try {
 
         .integrantes li, .crud-info li {
             margin-bottom: 8px;
-        }
-
-        .mockup p {
-            color: #4b5563;
         }
 
         .mockup img {
@@ -180,29 +206,15 @@ try {
             background: #1d4ed8;
         }
 
-        .btn-salir {
-            display: inline-block;
-            background: #dc2626;
-            color: white;
-            padding: 9px 15px;
-            border-radius: 5px;
-            text-decoration: none;
-            font-weight: bold;
-            margin-top: 8px;
-        }
-
-        .btn-salir:hover {
-            background: #b91c1c;
-        }
-
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 25px;
+            margin-top: 18px;
+            font-size: 14px;
         }
 
         th, td {
-            padding: 10px;
+            padding: 9px;
             border-bottom: 1px solid #ddd;
             text-align: left;
             vertical-align: top;
@@ -246,16 +258,22 @@ try {
 <div class="container">
     <h1>Tienda de Artículos Tecnológicos</h1>
 
+    <div class="menu">
+        <a href="crud.php?accion=crear">Crear</a>
+        <a href="crud.php?accion=consultar">Consultar</a>
+        <a href="crud.php?accion=modificar">Modificar</a>
+        <a href="crud.php?accion=eliminar">Eliminar</a>
+        <a href="crud.php?logout=1">Cerrar sesión</a>
+    </div>
+
     <div class="usuario-box">
         Sesión iniciada como:
-        <strong><?= htmlspecialchars($_SESSION['usuario_correo']) ?></strong>
-        <br>
-        <a class="btn-salir" href="crud.php?logout=1">Cerrar sesión</a>
+        <strong><?= htmlspecialchars($usuarioActual) ?></strong>
     </div>
 
     <div class="descripcion">
         Aplicación web dinámica desarrollada en PHP con base de datos SQLite.
-        Permite gestionar productos tecnológicos mediante operaciones CRUD.
+        Permite gestionar productos tecnológicos mediante operaciones CRUD y registra eventos en una bitácora.
     </div>
 
     <section class="integrantes">
@@ -267,22 +285,13 @@ try {
         </ul>
     </section>
 
-    <section class="mockup">
-        <h2>Mockup de la Aplicación</h2>
-        <p>
-            A continuación, se presenta un mockup visual de la aplicación web desarrollada,
-            utilizado como referencia para representar la interfaz principal del sistema CRUD.
-        </p>
-        <img src="mockup.jpeg" alt="Mockup de la aplicación Tienda Tecnológica">
-    </section>
-
     <section class="crud-info">
         <h2>Descripción de Operaciones CRUD</h2>
         <ul>
-            <li><strong>Crear:</strong> permite registrar un nuevo producto tecnológico indicando nombre, categoría, precio, stock y descripción.</li>
-            <li><strong>Leer:</strong> permite visualizar todos los productos almacenados en la base de datos mediante una tabla.</li>
-            <li><strong>Modificar:</strong> permite actualizar los datos de un producto existente a través de la opción Editar.</li>
-            <li><strong>Borrar:</strong> permite eliminar un producto registrado mediante la opción Eliminar.</li>
+            <li><strong>Crear:</strong> permite registrar un nuevo producto tecnológico.</li>
+            <li><strong>Consultar:</strong> permite visualizar los productos almacenados en la base de datos.</li>
+            <li><strong>Modificar:</strong> permite actualizar los datos de un producto existente.</li>
+            <li><strong>Eliminar:</strong> permite borrar un producto registrado.</li>
         </ul>
     </section>
 
@@ -292,66 +301,156 @@ try {
         </div>
     <?php endif; ?>
 
-    <h2>Crear Producto</h2>
+    <?php if ($accion === 'crear'): ?>
+        <section class="seccion">
+            <h2>Crear Producto</h2>
 
-    <form method="POST">
-        <label>Nombre del producto</label>
-        <input type="text" name="nombre" required>
+            <form method="POST">
+                <label>Nombre del producto</label>
+                <input type="text" name="nombre" required>
 
-        <label>Categoría</label>
-        <input type="text" name="categoria" required>
+                <label>Categoría</label>
+                <input type="text" name="categoria" required>
 
-        <label>Precio</label>
-        <input type="number" name="precio" min="0" step="0.01" required>
+                <label>Precio</label>
+                <input type="number" name="precio" min="0" step="0.01" required>
 
-        <label>Stock</label>
-        <input type="number" name="stock" min="0" required>
+                <label>Stock</label>
+                <input type="number" name="stock" min="0" required>
 
-        <label>Descripción</label>
-        <textarea name="descripcion" required></textarea>
+                <label>Descripción</label>
+                <textarea name="descripcion" required></textarea>
 
-        <button type="submit" name="crear">Crear Producto</button>
-    </form>
+                <button type="submit" name="crear">Crear Producto</button>
+            </form>
+        </section>
+    <?php endif; ?>
 
-    <h2>Leer, Modificar y Borrar Productos</h2>
+    <?php if ($accion === 'consultar'): ?>
+        <section class="seccion">
+            <h2>Consultar Productos</h2>
 
-    <table>
-        <tr>
-            <th>ID</th>
-            <th>Nombre</th>
-            <th>Categoría</th>
-            <th>Descripción</th>
-            <th>Precio</th>
-            <th>Stock</th>
-            <th>Fecha y hora</th>
-            <th>Acciones</th>
-        </tr>
-
-        <?php if (count($productos) > 0): ?>
-            <?php foreach ($productos as $p): ?>
+            <table>
                 <tr>
-                    <td><?= htmlspecialchars($p['id']) ?></td>
-                    <td><?= htmlspecialchars($p['nombre']) ?></td>
-                    <td><?= htmlspecialchars($p['categoria']) ?></td>
-                    <td><?= htmlspecialchars($p['descripcion']) ?></td>
-                    <td>$<?= number_format($p['precio'], 0, ',', '.') ?></td>
-                    <td><?= htmlspecialchars($p['stock']) ?></td>
-                    <td><?= htmlspecialchars($p['fecha_creacion']) ?></td>
-                    <td>
-                        <a class="editar" href="editar.php?id=<?= htmlspecialchars($p['id']) ?>">Editar</a> |
-                        <a class="eliminar" href="?eliminar=<?= htmlspecialchars($p['id']) ?>"
-                           onclick="return confirm('¿Eliminar producto?')">
-                           Eliminar
-                        </a>
-                    </td>
+                    <th>ID</th>
+                    <th>Nombre</th>
+                    <th>Categoría</th>
+                    <th>Descripción</th>
+                    <th>Precio</th>
+                    <th>Stock</th>
+                    <th>Fecha y hora</th>
+                </tr>
+
+                <?php if (count($productos) > 0): ?>
+                    <?php foreach ($productos as $p): ?>
+                        <tr>
+                            <td><?= htmlspecialchars($p['id']) ?></td>
+                            <td><?= htmlspecialchars($p['nombre']) ?></td>
+                            <td><?= htmlspecialchars($p['categoria']) ?></td>
+                            <td><?= htmlspecialchars($p['descripcion']) ?></td>
+                            <td>$<?= number_format($p['precio'], 0, ',', '.') ?></td>
+                            <td><?= htmlspecialchars($p['stock']) ?></td>
+                            <td><?= htmlspecialchars($p['fecha_creacion']) ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <tr>
+                        <td colspan="7">No existen productos registrados.</td>
+                    </tr>
+                <?php endif; ?>
+            </table>
+        </section>
+    <?php endif; ?>
+
+    <?php if ($accion === 'modificar'): ?>
+        <section class="seccion">
+            <h2>Modificar Productos</h2>
+
+            <table>
+                <tr>
+                    <th>ID</th>
+                    <th>Nombre</th>
+                    <th>Categoría</th>
+                    <th>Precio</th>
+                    <th>Stock</th>
+                    <th>Acción</th>
+                </tr>
+
+                <?php foreach ($productos as $p): ?>
+                    <tr>
+                        <td><?= htmlspecialchars($p['id']) ?></td>
+                        <td><?= htmlspecialchars($p['nombre']) ?></td>
+                        <td><?= htmlspecialchars($p['categoria']) ?></td>
+                        <td>$<?= number_format($p['precio'], 0, ',', '.') ?></td>
+                        <td><?= htmlspecialchars($p['stock']) ?></td>
+                        <td>
+                            <a class="editar" href="editar.php?id=<?= htmlspecialchars($p['id']) ?>">Editar</a>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+            </table>
+        </section>
+    <?php endif; ?>
+
+    <?php if ($accion === 'eliminar'): ?>
+        <section class="seccion">
+            <h2>Eliminar Productos</h2>
+
+            <table>
+                <tr>
+                    <th>ID</th>
+                    <th>Nombre</th>
+                    <th>Categoría</th>
+                    <th>Precio</th>
+                    <th>Stock</th>
+                    <th>Acción</th>
+                </tr>
+
+                <?php foreach ($productos as $p): ?>
+                    <tr>
+                        <td><?= htmlspecialchars($p['id']) ?></td>
+                        <td><?= htmlspecialchars($p['nombre']) ?></td>
+                        <td><?= htmlspecialchars($p['categoria']) ?></td>
+                        <td>$<?= number_format($p['precio'], 0, ',', '.') ?></td>
+                        <td><?= htmlspecialchars($p['stock']) ?></td>
+                        <td>
+                            <a class="eliminar" href="crud.php?accion=eliminar&eliminar=<?= htmlspecialchars($p['id']) ?>"
+                               onclick="return confirm('¿Eliminar producto?')">
+                                Eliminar
+                            </a>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+            </table>
+        </section>
+    <?php endif; ?>
+
+    <section class="seccion">
+        <h2>Bitácora / Historial de Eventos</h2>
+
+        <table>
+            <tr>
+                <th>ID</th>
+                <th>Fecha hora</th>
+                <th>Nombre de usuario</th>
+                <th>Tipo</th>
+                <th>Detalle</th>
+                <th>IP_HOST_CLIENTE</th>
+            </tr>
+
+            <?php foreach ($logs as $log): ?>
+                <tr>
+                    <td><?= htmlspecialchars($log['id']) ?></td>
+                    <td><?= htmlspecialchars($log['fecha_hora']) ?></td>
+                    <td><?= htmlspecialchars($log['nombre_usuario']) ?></td>
+                    <td><?= htmlspecialchars($log['tipo']) ?></td>
+                    <td><?= htmlspecialchars($log['detalle']) ?></td>
+                    <td><?= htmlspecialchars($log['ip_host_cliente']) ?></td>
                 </tr>
             <?php endforeach; ?>
-        <?php else: ?>
-            <tr>
-                <td colspan="8">No existen productos registrados.</td>
-            </tr>
-        <?php endif; ?>
-    </table>
+        </table>
+    </section>
+
 </div>
 
 </body>
