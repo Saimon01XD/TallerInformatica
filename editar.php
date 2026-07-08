@@ -8,28 +8,26 @@ if (!isset($_SESSION['usuario_id'])) {
 
 require 'database.php';
 
-/* ===== VALIDAR ID ===== */
+$usuarioActual = $_SESSION['usuario_correo'];
+$mensaje = "";
+
 if (!isset($_GET['id'])) {
-    header("Location: index.php");
+    header("Location: crud.php?accion=modificar");
     exit;
 }
 
 $id = $_GET['id'];
 
-/* ===== OBTENER PRODUCTO ===== */
 $stmt = $pdo->prepare("SELECT * FROM productos WHERE id = ?");
 $stmt->execute([$id]);
 $producto = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$producto) {
-    echo "Producto no encontrado.";
+    header("Location: crud.php?accion=modificar");
     exit;
 }
 
-$mensaje = "";
-
-/* ===== ACTUALIZAR PRODUCTO ===== */
-if (isset($_POST['actualizar'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $nombre = trim($_POST['nombre']);
     $categoria = trim($_POST['categoria']);
     $precio = $_POST['precio'];
@@ -49,7 +47,14 @@ if (isset($_POST['actualizar'])) {
 
         $stmt->execute([$nombre, $categoria, $precio, $stock, $descripcion, $id]);
 
-        header("Location: index.php");
+        registrarLog(
+            $pdo,
+            $usuarioActual,
+            "Modificar registro",
+            "Tabla: productos | ID modificado: " . $id . " | Nombre: " . $nombre
+        );
+
+        header("Location: crud.php?accion=modificar");
         exit;
     }
 }
@@ -61,14 +66,67 @@ if (isset($_POST['actualizar'])) {
     <meta charset="UTF-8">
     <title>Editar Producto</title>
     <style>
-        body { font-family: Arial, sans-serif; background: #f4f6f8; padding: 30px; }
-        .container { max-width: 700px; background: #fff; padding: 25px; margin: auto; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        h1 { color: #2c3e50; }
-        label { font-weight: bold; color: #374151; }
-        input, textarea { width: 100%; padding: 8px; margin-top: 5px; margin-bottom: 15px; box-sizing: border-box; }
-        button { background: #16a34a; color: white; border: none; padding: 10px 18px; border-radius: 5px; cursor: pointer; font-weight: bold; }
-        a { display: inline-block; margin-top: 15px; text-decoration: none; color: #2563eb; font-weight: bold; }
-        .mensaje-error { background: #fee2e2; border: 1px solid #fca5a5; color: #991b1b; padding: 12px; border-radius: 5px; margin-bottom: 15px; font-weight: bold; }
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f6f8;
+            padding: 30px;
+            margin: 0;
+        }
+
+        .container {
+            max-width: 700px;
+            background: #fff;
+            padding: 25px;
+            margin: auto;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.12);
+        }
+
+        h1 {
+            color: #1f2937;
+        }
+
+        label {
+            font-weight: bold;
+            color: #374151;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 9px;
+            margin-top: 5px;
+            margin-bottom: 15px;
+            box-sizing: border-box;
+            border: 1px solid #cbd5e1;
+            border-radius: 5px;
+        }
+
+        button {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        a {
+            margin-left: 10px;
+            font-weight: bold;
+            text-decoration: none;
+            color: #6b7280;
+        }
+
+        .mensaje-error {
+            background: #fee2e2;
+            border: 1px solid #fca5a5;
+            color: #991b1b;
+            padding: 12px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -98,10 +156,9 @@ if (isset($_POST['actualizar'])) {
         <label>Descripción</label>
         <textarea name="descripcion" required><?= htmlspecialchars($producto['descripcion']) ?></textarea>
 
-        <button type="submit" name="actualizar">Actualizar Producto</button>
+        <button type="submit">Guardar Cambios</button>
+        <a href="crud.php?accion=modificar">Cancelar</a>
     </form>
-
-    <a href="index.php">⬅ Volver al listado</a>
 </div>
 
 </body>
